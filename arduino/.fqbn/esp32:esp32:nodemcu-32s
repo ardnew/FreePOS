@@ -1,0 +1,14 @@
+{
+    "global": [
+        "--format=text",
+        "--log-format=json"
+    ],
+    "compile": [
+        "--warnings=all",
+        "--build-property=build.code_debug=5",
+        "--build-property=build.extra_flags=-DCORE_DEBUG_LEVEL=5",
+        "--build-cache-path=/opt/beans/src/arduino/build/esp32/esp32/nodemcu-32s",
+        "--build-path=/opt/beans/src/arduino/build/esp32/esp32/nodemcu-32s",
+        "--dump-profile"
+    ]
+}
