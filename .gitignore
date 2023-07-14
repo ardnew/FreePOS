@@ -1,1 +1,5 @@
 **/build/
+**/.build/
+**/.fqbn/
+**/*.code-workspace
+**/*partitions*.csv
