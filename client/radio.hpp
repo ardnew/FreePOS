@@ -1,20 +1,43 @@
 #ifndef radio_hpp
 #define radio_hpp
 
+#include <tuple>
+
 #include <BLEDevice.h>
 #include <ESP323248S035.h>
+#include <StatusLED.h>
 
 #include "spec.hpp"
+#include "state.hpp"
+#include "view.hpp"
 
-template <typename T>
+static BLEUUID    uuidService(BLE_SENSORS_SERVICE_UUID);
+static BLEUUID uuidCharAccelX();
+static BLEUUID uuidCharAccelY();
+static BLEUUID uuidCharAccelZ();
+static BLEUUID uuidCharBarPsi();
+static BLEUUID uuidCharPrecip();
+static BLEUUID uuidCharProxim();
+static BLEUUID uuidCharAirTmp();
+static BLEUUID uuidCharH2OTmp();
+static BLEUUID uuidCharWeight();
+
 class Radio:
   public BLEDevice,
   public BLEAdvertisedDeviceCallbacks,
   public BLEClientCallbacks {
   using BLEDevice::BLEDevice;
+  using Device = ESP323248S035C<MainView>;
 
 private:
-  const T &_hmi;
+  Device &_dev;
+  MainView &_view;
+
+  bool _doScan;
+  bool _doConn;
+  bool _isConn;
+
+protected:
   BLEAdvertisedDevice *_server;
   BLEClient *_client;
   BLERemoteCharacteristic *_charAccelX;
@@ -24,74 +47,54 @@ private:
   BLERemoteCharacteristic *_charPrecip;
   BLERemoteCharacteristic *_charProxim;
   BLERemoteCharacteristic *_charAirTmp;
-  BLERemoteCharacteristic *_charH20Tmp;
+  BLERemoteCharacteristic *_charH2OTmp;
   BLERemoteCharacteristic *_charWeight;
-  bool _doScan;
-  bool _doConn;
-  bool _isConn;
 
 protected:
-  static constexpr msec_t _refresh = msec_t{100};
+  static constexpr msec_t _refresh = msec_t{20};
 public:
   static inline constexpr msec_t refresh() { return _refresh; }
-
-  class State {
-  public:
-    enum Enum: uint8_t {
-      Disable = 0,
-      Reset,
-      ScanStart,
-      ConnectStart,
-      RegisterStart,
-      PairedWithAdvertisedDevice,
-    };
-    State() = delete;
-    constexpr State(const Enum &e): _enum(e) {}
-    constexpr operator Enum() const { return _enum; }
-
-  private:
-    Enum _enum;
-  };
 
 protected:
   State _state;
 
+  template <typename T>
+  struct _BLEChar {
+    BLERemoteCharacteristic *rc;
+    const UUID &id;
+    operator BLEUUID&()
+      { return std::forward<BLEUUID&>(BLEUUID::fromString(id.c_str())); }
+  };
+
 public:
-  Radio(const T &hmi):
-    _hmi(hmi), _server(nullptr), _doScan(true), _doConn(false), _isConn(false),
-      _state(State::Reset) {
+  Radio(Device &dev, MainView &root):
+    _dev(dev), _view(root), _server(nullptr),
+      _doScan(true), _doConn(false), _isConn(false),
+      _state(dev.hw<RGB_PWM>()) {
     BLEDevice::init(BLE_DEVICE_NAME);
     BLEScan *s = getScan();
     s->setAdvertisedDeviceCallbacks(this);
     s->setInterval(1349);
     s->setWindow(449);
     s->setActiveScan(true);
-    setState(State::ScanStart);
+    setState(State::Reset);
   }
 
-  bool setState(State const state) {
-    stracef("setState: %d", state);
+  bool setState(State::Enum const state) {
     // Don't process unless state is changing
     if (_state == state) { return true; }
 
     switch (state) {
     case State::Disable:
-      stracef("%s", "DISABLE!");
       _state = State::Disable; // always permitted
       return true;
 
+    case State::Disconnected:
+      _state = State::Disconnected;
+      return true;
+
     case State::Reset:
-      stracef("%s", "RESET!");
       _state = State::Reset; // always permitted
-      if (_client != nullptr) {
-        if (_client->isConnected()) {
-          stracef("%s", "force disconnect!");
-          _client->disconnect();
-        } else {
-          stracef("%s", "cleanup client");
-          delete _client;
-        }
-      }
       return true;
 
     case State::ScanStart:
@@ -99,52 +102,128 @@ public:
       getScan()->start(0);
       return true;
 
+    case State::ScanInProgress:
+      _state = State::ScanInProgress;
+      return true;
+
+    case State::ScanSuccess:
+      _state = State::ScanSuccess;
+      getScan()->stop();
+      return true;
+
     case State::ConnectStart:
       _state = State::ConnectStart;
-      getScan()->stop();
+      return true;
+
+    case State::ConnectSuccess:
+      _state = State::ConnectSuccess;
+      return true;
+
+    case State::ConnectFailure:
+      _state = State::ConnectFailure;
+      if (_client != nullptr) {
+        if (_client->isConnected()) {
+          _client->disconnect();
+        } else {
+          delete _client;
+        }
+      }
       return true;
 
     case State::RegisterStart:
       _state = State::RegisterStart;
       return true;
 
-    case State::PairedWithAdvertisedDevice:
-      _state = State::PairedWithAdvertisedDevice;
+    case State::RegisterCallbacks:
+      _state = State::RegisterCallbacks;
+      return true;
+
+    case State::RegisterSuccess:
+      _state = State::RegisterSuccess;
+      return true;
+
+    case State::RegisterFailure:
+      _state = State::RegisterFailure;
+      if (_client != nullptr) {
+        if (_client->isConnected()) {
+          _client->disconnect();
+        } else {
+          delete _client;
+        }
+      }
+      return true;
+
+    case State::PairedAndReady:
+      _state = State::PairedAndReady;
       return true;
     }
   }
 
   void update() {
-    stracef("update (%d)", _state);
     switch (_state) {
     case State::Disable:
       break;
 
+    case State::Disconnected:
+      delete _client;
+      delete _server;
+      setState(State::Reset);
+      break;
+
     case State::Reset:
-      // Wait until resources cleaned up before rescanning.
-      // Resources are cleaned up in onDisconnect if we were connected.
-      // Otherwise, they are cleaned up in setState for State::Reset.
-      if (_client == nullptr) {
-        setState(State::ScanStart);
-      }
+      setState(State::ScanStart);
       break;
 
     case State::ScanStart:
+      setState(State::ScanInProgress);
+      break;
+
+    case State::ScanInProgress:
+      break;
+
+    case State::ScanSuccess:
+      setState(State::ConnectStart);
       break;
 
     case State::ConnectStart:
       if (!connect()) {
+        setState(State::ConnectFailure);
+      }
+      break;
+
+    case State::ConnectSuccess:
+      setState(State::RegisterStart);
+      break;
+
+    case State::ConnectFailure:
+      if (_client == nullptr) {
         setState(State::Reset);
       }
       break;
 
     case State::RegisterStart:
-      if (!registerCallbacks()) {
+      setState(State::RegisterCallbacks);
+      break;
+
+    case State::RegisterCallbacks:
+      if (registerCallbacks()) {
+        setState(State::RegisterSuccess);
+      } else {
+        setState(State::RegisterFailure);
+      }
+      break;
+
+    case State::RegisterSuccess:
+      setState(State::PairedAndReady);
+      break;
+
+    case State::RegisterFailure:
+      if (_client == nullptr) {
         setState(State::Reset);
       }
       break;
 
-    case State::PairedWithAdvertisedDevice:
+    case State::PairedAndReady:
       break;
 
     default:
@@ -153,160 +232,71 @@ public:
   }
 
   void onResult(BLEAdvertisedDevice dev) {
-    stracef("%s", "onResult");
+    swritef("Found: %s\n", dev.toString().c_str());
     if (dev.getName() == BLE_DEVICE_NAME) {
       if (dev.haveServiceUUID() && dev.isAdvertisingService(uuidService)) {
-        stracef("%s", "create server");
-        // getScan()->stop();
         _server = new BLEAdvertisedDevice(dev);
-        stracef("%s", "connect to device");
-        setState(State::ConnectStart);
+        setState(State::ScanSuccess);
       }
     }
   }
 
   void onConnect(BLEClient *client) {
-    stracef("%s", "<onConnect>");
-    setState(State::RegisterStart);
+    setState(State::ConnectSuccess);
   }
 
   void onDisconnect(BLEClient *client) {
-    delete _client;
-    delete _server;
+    setState(State::Disconnected);
   }
 
   bool connect() {
-    stracef("%s", "createClient");
     _client = createClient();
-    stracef("%s", "setClientCallbacks");
     _client->setClientCallbacks(this);
-    stracef("%s", "connect");
     return _client->connect(_server);
   }
 
+  template <typename T>
+  bool install(BLERemoteService *rs, _BLEChar<T> *ch) {
+    if ((ch->rc = rs->getCharacteristic(ch->id.c_str())) == nullptr ||
+        !ch->rc->canNotify()) {
+      return false;
+    }
+    ch->rc->registerForNotify(
+      [&](BLERemoteCharacteristic *pChas,
+          uint8_t *pData, size_t length, bool isNotify) {
+        if (length >= 8) {
+          TaggedData<T> td(pData, length);
+        }
+      }
+    );
+    return true;
+  }
+
   bool registerCallbacks() {
-    stracef("%s", "setMTU");
     if (!_client->setMTU(517)) {
       return false;
     }
-
-    stracef("%s", "getService");
     BLERemoteService *svc;
-    if ((svc = _client->getService(uuidService)) == nullptr) {
+    if ((svc = _client->getService(uuidService.toString().c_str())) == nullptr) {
       return false;
     }
 
-    stracef("%s", "uuidCharAccelX");
-    if ((_charAccelX = svc->getCharacteristic(uuidCharAccelX)) == nullptr) {
-      return false;
-    }
-    if (_charAccelX->canNotify()) {
-      _charAccelX->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify) {
+    bool result = true;
 
-        });
-    }
+#define _install(res, T, ch, uuid) \
+    res && install<T>(svc, new _BLEChar<T>{ ch, uuid })
 
-    stracef("%s", "uuidCharAccelY");
-    if ((_charAccelY = svc->getCharacteristic(uuidCharAccelY)) == nullptr) {
-      return false;
-    }
-    if (_charAccelY->canNotify()) {
-      _charAccelY->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify) {
+    result = _install(result, float,   _charAccelX, BLE_SENSORS_ACCELX_CHAR_UUID);
+    result = _install(result, float,   _charAccelY, BLE_SENSORS_ACCELY_CHAR_UUID);
+    result = _install(result, float,   _charAccelZ, BLE_SENSORS_ACCELZ_CHAR_UUID);
+    result = _install(result, float,   _charBarPsi, BLE_SENSORS_BARPSI_CHAR_UUID);
+    result = _install(result, float,   _charPrecip, BLE_SENSORS_PRECIP_CHAR_UUID);
+    result = _install(result, int32_t, _charProxim, BLE_SENSORS_PROXIM_CHAR_UUID);
+    result = _install(result, float,   _charAirTmp, BLE_SENSORS_AIRTMP_CHAR_UUID);
+    result = _install(result, float,   _charH2OTmp, BLE_SENSORS_H2OTMP_CHAR_UUID);
+    result = _install(result, float,   _charWeight, BLE_SENSORS_WEIGHT_CHAR_UUID);
 
-        });
-    }
-
-    stracef("%s", "uuidCharAccelZ");
-    if ((_charAccelZ = svc->getCharacteristic(uuidCharAccelZ)) == nullptr) {
-      return false;
-    }
-    if (_charAccelZ->canNotify()) {
-      _charAccelZ->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify) {
-
-        });
-    }
-
-    stracef("%s", "uuidCharBarPsi");
-    if ((_charBarPsi = svc->getCharacteristic(uuidCharBarPsi)) == nullptr) {
-      return false;
-    }
-    if (_charBarPsi->canNotify()) {
-      _charBarPsi->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify) {
-
-        });
-    }
-
-    stracef("%s", "uuidCharPrecip");
-    if ((_charPrecip = svc->getCharacteristic(uuidCharPrecip)) == nullptr) {
-      return false;
-    }
-    if (_charPrecip->canNotify()) {
-      _charPrecip->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify) {
-
-        });
-    }
-
-    stracef("%s", "uuidCharProxim");
-    if ((_charProxim = svc->getCharacteristic(uuidCharProxim)) == nullptr) {
-      return false;
-    }
-    if (_charProxim->canNotify()) {
-      _charProxim->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify) {
-
-        });
-    }
-
-    stracef("%s", "uuidCharAirTmp");
-    if ((_charAirTmp = svc->getCharacteristic(uuidCharAirTmp)) == nullptr) {
-      return false;
-    }
-    if (_charAirTmp->canNotify()) {
-      _charAirTmp->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify) {
-
-        });
-    }
-
-    stracef("%s", "uuidCharH20Tmp");
-    if ((_charH20Tmp = svc->getCharacteristic(uuidCharH20Tmp)) == nullptr) {
-      return false;
-    }
-    if (_charH20Tmp->canNotify()) {
-      _charH20Tmp->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify) {
-
-        });
-    }
-
-    stracef("%s", "uuidCharWeight");
-    if ((_charWeight = svc->getCharacteristic(uuidCharWeight)) == nullptr) {
-      return false;
-    }
-    if (_charWeight->canNotify()) {
-      _charWeight->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify) {
-
-        });
-    }
-
-    stracef("%s", "ok!");
-    setState(State::PairedWithAdvertisedDevice);
-    return true;
+    return result;
   }
 };
 

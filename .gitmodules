@@ -1,0 +1,3 @@
+[submodule "lib/RingBuffer"]
+	path = lib/RingBuffer
+	url = https://github.com/Locoduino/RingBuffer.git
