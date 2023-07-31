@@ -1,0 +1,6 @@
+[submodule "lib/RingBuffer"]
+	path = lib/RingBuffer
+	url = git@github.com:Locoduino/RingBuffer.git
+[submodule "lib/ticks"]
+	path = lib/ticks
+	url = https://github.com/ardnew/ticks.git

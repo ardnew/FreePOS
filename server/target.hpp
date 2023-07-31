@@ -13,19 +13,20 @@
 #include <temperature.h>
 
 #include "scale.hpp"
+#include "char.hpp"
 
 class Target {
 private:
   BLEService _sensors;
-  BLEFloatCharacteristic _accelXChar;
-  BLEFloatCharacteristic _accelYChar;
-  BLEFloatCharacteristic _accelZChar;
-  BLEFloatCharacteristic _barPsiChar;
-  BLEFloatCharacteristic _precipChar;
-  BLEIntCharacteristic   _proximChar;
-  BLEFloatCharacteristic _airTmpChar;
-  BLEFloatCharacteristic _h2oTmpChar;
-  BLEFloatCharacteristic _weightChar;
+  BLETaggedFloatCharacteristic _accelXChar;
+  BLETaggedFloatCharacteristic _accelYChar;
+  BLETaggedFloatCharacteristic _accelZChar;
+  BLETaggedFloatCharacteristic _barPsiChar;
+  BLETaggedFloatCharacteristic _precipChar;
+  BLETaggedIntCharacteristic   _proximChar;
+  BLETaggedFloatCharacteristic _airTmpChar;
+  BLETaggedFloatCharacteristic _h2oTmpChar;
+  BLETaggedFloatCharacteristic _weightChar;
 protected:
   Accelerometer _accelerometer;
   Barometer _barometer;
@@ -34,7 +35,7 @@ protected:
   //Gyroscope _gyroscope;
   Humidity _humidity;
   //Magnetometer _magnetometer;
-  Microphone _microphone;
+  //Microphone _microphone;
   Proximity _proximity;
   Temperature _temperature;
   //Thermometer _thermometer;

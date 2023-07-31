@@ -5,12 +5,7 @@
 Target target;
 
 void setup(void) {
-#ifdef DEBUG
-  SIO.begin(115200);
-#ifdef DEBUG_SYNC
-  while (!SIO) { delay(10); }
-#endif // DEBUG_SYNC
-#endif // DEBUG
+  Debug::init();
   swritef("%s", "initializing target");
   if (!target.init()) {
 		spanicf("%s: failed to initialize target", "target.init()");

@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+// FreePOS API
+#include "const.hpp"
 #include "ble.hpp"
 #include "debug.hpp"
 

@@ -81,8 +81,8 @@ public:
       Task<Device>("BLE", 1-ARDUINO_RUNNING_CORE,
         [](void *pArg) {
           auto dev = static_cast<Device *>(pArg);
-          auto rad = Radio<Device>(*dev);
-          static constexpr uint32_t period = Radio<Device>::refresh().count();
+          auto rad = Radio(*dev, root);
+          static constexpr uint32_t period = Radio::refresh().count();
           govern<period>( [&](){ rad.update(); } );
         },
         &_dev),
@@ -104,12 +104,13 @@ private:
 Target target;
 
 void setup() {
-  Serial.begin(115200);
+  // NOOP unless DEBUG is defined non-zero (see debug.hpp)
+  Debug::init();
 
   target.init();
 
-  vTaskSuspend(0); // Suspend ourselves, so that only the tasks created above
-                   // are allocated any processing time.
+  // Suspend ourselves so that only the tasks created above are allocated time.
+  vTaskSuspend(nullptr);
 }
 
 void loop() { yield(); }

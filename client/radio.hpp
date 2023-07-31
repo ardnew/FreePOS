@@ -3,18 +3,28 @@
 
 #include <BLEDevice.h>
 #include <ESP323248S035.h>
+#include <StatusLED.h>
 
 #include "spec.hpp"
+#include "state.hpp"
+#include "view.hpp"
 
-template <typename T>
 class Radio:
   public BLEDevice,
   public BLEAdvertisedDeviceCallbacks,
   public BLEClientCallbacks {
   using BLEDevice::BLEDevice;
+  using Device = ESP323248S035C<MainView>;
 
 private:
-  const T &_hmi;
+  Device &_dev;
+  MainView &_view;
+
+  bool _doScan;
+  bool _doConn;
+  bool _isConn;
+
+protected:
   BLEAdvertisedDevice *_server;
   BLEClient *_client;
   BLERemoteCharacteristic *_charAccelX;
@@ -26,12 +36,9 @@ private:
   BLERemoteCharacteristic *_charAirTmp;
   BLERemoteCharacteristic *_charH20Tmp;
   BLERemoteCharacteristic *_charWeight;
-  bool _doScan;
-  bool _doConn;
-  bool _isConn;
 
 protected:
-  static constexpr msec_t _refresh = msec_t{100};
+  static constexpr msec32_t _refresh = msec32_t{100};
 public:
   static inline constexpr msec_t refresh() { return _refresh; }
 
@@ -57,8 +64,9 @@ protected:
   State _state;
 
 public:
-  Radio(const T &hmi):
-    _hmi(hmi), _server(nullptr), _doScan(true), _doConn(false), _isConn(false),
+  Radio(Device &dev, MainView &root):
+    _dev(dev), _view(root), _server(nullptr),
+      _doScan(true), _doConn(false), _isConn(false),
       _state(State::Reset) {
     BLEDevice::init(BLE_DEVICE_NAME);
     BLEScan *s = getScan();

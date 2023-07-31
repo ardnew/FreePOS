@@ -89,13 +89,17 @@ void Target::update() {
     while (central.connected()) {
       AccelerometerData acc;
       if (_accelerometer.pop(acc)) {
-        _accelXChar.writeValue(acc.x);
-        _accelYChar.writeValue(acc.y);
-        _accelZChar.writeValue(acc.z);
+        _accelXChar.writeValue(
+          Packet<decltype(acc.x)>(acc.x, acc.time()));
+        _accelYChar.writeValue(
+          Packet<decltype(acc.y)>(acc.y, acc.time()));
+        _accelZChar.writeValue(
+          Packet<decltype(acc.z)>(acc.z, acc.time()));
       }
       BarometerData bar;
       if (_barometer.pop(bar)) {
-        _barPsiChar.writeValue(bar.psi);
+        _barPsiChar.writeValue(
+          Packet<decltype(bar.psi)>(bar.psi, bar.time()));
       }
       //ColorData col;
       //if (_color.pop(col)) {}
@@ -105,25 +109,30 @@ void Target::update() {
       //if (_gyroscope.pop(gyr)) {}
       HumidityData hum;
       if (_humidity.pop(hum)) {
-        _precipChar.writeValue(hum.humidity);
+        _precipChar.writeValue(
+          Packet<decltype(hum.humidity)>(hum.humidity, hum.time()));
       }
       //MagnetometerData mag;
       //if (_magnetometer.pop(mag)) {}
       ProximityData pro;
       if (_proximity.pop(pro)) {
-        _proximChar.writeValue(pro.proximity);
+        _proximChar.writeValue(
+          Packet<decltype(pro.proximity)>(pro.proximity, pro.time()));
       }
       TemperatureData tem;
       if (_temperature.pop(tem)) {
-        _airTmpChar.writeValue(tem.fahrenheit);
+        _airTmpChar.writeValue(
+          Packet<decltype(tem.fahrenheit)>(tem.fahrenheit, tem.time()));
       }
       //ThermometerData the;
       //if (_thermometer.pop(the)) {
-      //  _h2oTmpChar.writeValue(the.fahrenheit);
+      //  _h2oTmpChar.writeValue(
+        // Packet<decltype(the.fahrenheit)>(the.fahrenheit, the.time()));
       //}
       //ScaleData sca;
       //if (_scale.pop(sca)) {
-      //  _weightChar.writeValue(sca.read - sca.zero);
+      //  _weightChar.writeValue(
+        // Packet<decltype(sca.read)>(sca.read - sca.zero, sca.time()));
       //}
     }
     digitalWrite(LED_BUILTIN, LOW);
