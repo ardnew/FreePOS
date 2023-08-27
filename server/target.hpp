@@ -1,31 +1,23 @@
 #ifndef target_hpp
 #define target_hpp
 
-#include <accelerometer.h>
-#include <barometer.h>
-// #include <color.h>
-// #include <gesture.h>
-// #include <gyroscope.h>
-#include <humidity.h>
-// #include <magnetometer.h>
-#include <microphone.h>
-#include <proximity.h>
-#include <temperature.h>
-
+#include "keepalive.hpp"
 #include "scale.hpp"
+#include "char.hpp"
 
 class Target {
 private:
   BLEService _sensors;
-  BLEFloatCharacteristic _accelXChar;
-  BLEFloatCharacteristic _accelYChar;
-  BLEFloatCharacteristic _accelZChar;
-  BLEFloatCharacteristic _barPsiChar;
-  BLEFloatCharacteristic _precipChar;
-  BLEIntCharacteristic   _proximChar;
-  BLEFloatCharacteristic _airTmpChar;
-  BLEFloatCharacteristic _h2oTmpChar;
-  BLEFloatCharacteristic _weightChar;
+  BLETaggedCharacteristic<KeepAliveData::GattType> _pulsesChar;
+  BLETaggedCharacteristic<AccelerometerData::GattType> _accelXChar;
+  BLETaggedCharacteristic<AccelerometerData::GattType> _accelYChar;
+  BLETaggedCharacteristic<AccelerometerData::GattType> _accelZChar;
+  BLETaggedCharacteristic<BarometerData::GattType> _barPsiChar;
+  BLETaggedCharacteristic<HumidityData::GattType> _precipChar;
+  BLETaggedCharacteristic<ProximityData::GattType> _proximChar;
+  BLETaggedCharacteristic<TemperatureData::GattType> _airTmpChar;
+  // BLETaggedCharacteristic<ThermometerData::GattType> _h2oTmpChar;
+  BLETaggedCharacteristic<ScaleData::GattType> _weightChar;
 protected:
   Accelerometer _accelerometer;
   Barometer _barometer;
@@ -33,8 +25,9 @@ protected:
   //Gesture _gesture;
   //Gyroscope _gyroscope;
   Humidity _humidity;
+  KeepAlive _keepAlive;
   //Magnetometer _magnetometer;
-  Microphone _microphone;
+  //Microphone _microphone;
   Proximity _proximity;
   Temperature _temperature;
   //Thermometer _thermometer;

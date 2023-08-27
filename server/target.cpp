@@ -2,16 +2,17 @@
 #include "spec.hpp"
 
 Target::Target():
-  _sensors(BLE_SENSORS_SERVICE_UUID),
-  _accelXChar(BLE_SENSORS_ACCELX_CHAR_UUID, BLE_SENSORS_CHAR_FLAG),
-  _accelYChar(BLE_SENSORS_ACCELY_CHAR_UUID, BLE_SENSORS_CHAR_FLAG),
-  _accelZChar(BLE_SENSORS_ACCELZ_CHAR_UUID, BLE_SENSORS_CHAR_FLAG),
-  _barPsiChar(BLE_SENSORS_BARPSI_CHAR_UUID, BLE_SENSORS_CHAR_FLAG),
-  _precipChar(BLE_SENSORS_PRECIP_CHAR_UUID, BLE_SENSORS_CHAR_FLAG),
-  _proximChar(BLE_SENSORS_PROXIM_CHAR_UUID, BLE_SENSORS_CHAR_FLAG),
-  _airTmpChar(BLE_SENSORS_AIRTMP_CHAR_UUID, BLE_SENSORS_CHAR_FLAG),
-  _h2oTmpChar(BLE_SENSORS_H2OTMP_CHAR_UUID, BLE_SENSORS_CHAR_FLAG),
-  _weightChar(BLE_SENSORS_WEIGHT_CHAR_UUID, BLE_SENSORS_CHAR_FLAG) {
+  _sensors(UUID_BLE_SENSORS_SERVICE),
+  _pulsesChar(UUID_BLE_SENSORS_PULSES_CHAR, BLE_SENSORS_CHAR_MODE),
+  _accelXChar(UUID_BLE_SENSORS_ACCELX_CHAR, BLE_SENSORS_CHAR_MODE),
+  _accelYChar(UUID_BLE_SENSORS_ACCELY_CHAR, BLE_SENSORS_CHAR_MODE),
+  _accelZChar(UUID_BLE_SENSORS_ACCELZ_CHAR, BLE_SENSORS_CHAR_MODE),
+  _barPsiChar(UUID_BLE_SENSORS_BARPSI_CHAR, BLE_SENSORS_CHAR_MODE),
+  _precipChar(UUID_BLE_SENSORS_PRECIP_CHAR, BLE_SENSORS_CHAR_MODE),
+  _proximChar(UUID_BLE_SENSORS_PROXIM_CHAR, BLE_SENSORS_CHAR_MODE),
+  _airTmpChar(UUID_BLE_SENSORS_AIRTMP_CHAR, BLE_SENSORS_CHAR_MODE),
+  // _h2oTmpChar(UUID_BLE_SENSORS_H2OTMP_CHAR, BLE_SENSORS_CHAR_MODE),
+  _weightChar(UUID_BLE_SENSORS_WEIGHT_CHAR, BLE_SENSORS_CHAR_MODE) {
   pinMode(PIN_ENABLE_SENSORS_3V3, OUTPUT);
   pinMode(PIN_ENABLE_I2C_PULLUP, OUTPUT);
   digitalWrite(PIN_ENABLE_SENSORS_3V3, LOW);
@@ -27,10 +28,11 @@ bool Target::init() {
   }
   swritef("%s", "radio initialized");
 
-  BLE.setDeviceName(BLE_DEVICE_NAME);
-  BLE.setLocalName(BLE_LOCAL_NAME);
+  BLE.setDeviceName(BLEServerName);
+  BLE.setLocalName(BLEDeviceName);
   BLE.setAdvertisedService(_sensors);
 
+  _sensors.addCharacteristic(_pulsesChar);
   _sensors.addCharacteristic(_accelXChar);
   _sensors.addCharacteristic(_accelYChar);
   _sensors.addCharacteristic(_accelZChar);
@@ -38,7 +40,7 @@ bool Target::init() {
   _sensors.addCharacteristic(_precipChar);
   _sensors.addCharacteristic(_proximChar);
   _sensors.addCharacteristic(_airTmpChar);
-  _sensors.addCharacteristic(_h2oTmpChar);
+  // _sensors.addCharacteristic(_h2oTmpChar);
   _sensors.addCharacteristic(_weightChar);
 
   BLE.addService(_sensors);
@@ -70,7 +72,9 @@ bool Target::init() {
   // _gesture.start();
   // _gyroscope.start();
   _humidity.start();
+  _keepAlive.start();
   // _magnetometer.start();
+  // _microphone.start();
   _proximity.start();
   _temperature.start();
   // _thermometer.start();
@@ -89,13 +93,13 @@ void Target::update() {
     while (central.connected()) {
       AccelerometerData acc;
       if (_accelerometer.pop(acc)) {
-        _accelXChar.writeValue(acc.x);
-        _accelYChar.writeValue(acc.y);
-        _accelZChar.writeValue(acc.z);
+        _accelXChar.writeValue(Packet<decltype(acc.x)>(acc.x, acc.time()));
+        _accelYChar.writeValue(Packet<decltype(acc.y)>(acc.y, acc.time()));
+        _accelZChar.writeValue(Packet<decltype(acc.z)>(acc.z, acc.time()));
       }
       BarometerData bar;
       if (_barometer.pop(bar)) {
-        _barPsiChar.writeValue(bar.psi);
+        _barPsiChar.writeValue(Packet<decltype(bar.psi)>(bar.psi, bar.time()));
       }
       //ColorData col;
       //if (_color.pop(col)) {}
@@ -105,25 +109,31 @@ void Target::update() {
       //if (_gyroscope.pop(gyr)) {}
       HumidityData hum;
       if (_humidity.pop(hum)) {
-        _precipChar.writeValue(hum.humidity);
+        _precipChar.writeValue(Packet<decltype(hum.humidity)>(hum.humidity, hum.time()));
+      }
+      KeepAliveData kee;
+      if (_keepAlive.pop(kee)) {
+        _pulsesChar.writeValue(Packet<decltype(kee.pulse)>(kee.pulse, kee.time()));
       }
       //MagnetometerData mag;
       //if (_magnetometer.pop(mag)) {}
+      //MicrophoneData mic;
+      //if (_microphone.pop(mic)) {}
       ProximityData pro;
       if (_proximity.pop(pro)) {
-        _proximChar.writeValue(pro.proximity);
+        _proximChar.writeValue(Packet<decltype(pro.proximity)>(pro.proximity, pro.time()));
       }
       TemperatureData tem;
       if (_temperature.pop(tem)) {
-        _airTmpChar.writeValue(tem.fahrenheit);
+        _airTmpChar.writeValue(Packet<decltype(tem.fahrenheit)>(tem.fahrenheit, tem.time()));
       }
       //ThermometerData the;
       //if (_thermometer.pop(the)) {
-      //  _h2oTmpChar.writeValue(the.fahrenheit);
+      //  _h2oTmpChar.writeValue(Packet<decltype(the.fahrenheit)>(the.fahrenheit, the.time()));
       //}
       //ScaleData sca;
       //if (_scale.pop(sca)) {
-      //  _weightChar.writeValue(sca.read - sca.zero);
+      //  _weightChar.writeValue(Packet<decltype(sca.read)>(sca.read - sca.zero, sca.time()));
       //}
     }
     digitalWrite(LED_BUILTIN, LOW);

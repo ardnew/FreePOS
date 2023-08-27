@@ -1,9 +1,10 @@
-#include <ESP323248S035.h>
-
+#include "ipc.hpp"
+#include "spec.hpp"
 #include "radio.hpp"
 #include "view.hpp"
 
-static MainView root;
+static IPC ipc;
+static MainView root(&ipc);
 
 // Task encapsulates a thread of execution on a single SMP core.
 //
@@ -35,10 +36,28 @@ template <typename T>
 struct Task {
 public:
   Task() = delete;
-  Task(const Task &) = delete;
   Task(const std::string id, const BaseType_t core,
-    const TaskFunction_t func, const T *args):
-      _hand(nullptr), _name(id), _func(func), _args(args), _core(core) {}
+      const TaskFunction_t func, const T *args):
+    _hand(nullptr), _name(id), _func(func), _args(args), _core(core) {}
+  Task(const Task &) = delete;
+  Task &operator=(const Task &) = delete;
+  Task(Task &&other) noexcept:
+      _hand(other._hand), _ctrl(other._ctrl), _name(std::move(other._name)),
+      _func(other._func), _args(other._args), _core(other._core) {
+    other._hand = nullptr;
+  }
+  Task &operator=(Task &&other) noexcept {
+    if (this != &other) {
+      _hand = other._hand;
+      _ctrl = other._ctrl;
+      _name = std::move(other._name);
+      _func = other._func;
+      _args = other._args;
+      _core = other._core;
+      other._hand = nullptr;
+    }
+    return *this;
+  }
   bool init() {
     _hand = xTaskCreateStaticPinnedToCore(_func, _name.c_str(), _size,
       (void *)_args, _prio, _buff, &_ctrl, _core);
@@ -52,10 +71,10 @@ private:
   StaticTask_t _ctrl;
   StackType_t  _buff[_size];
 
-  const std::string    _name;
-  const TaskFunction_t _func;
-  const T             *_args;
-  const BaseType_t     _core;
+  const std::string      _name;
+  const TaskFunction_t   _func;
+  const T               *_args;
+  const BaseType_t       _core;
 };
 
 class Target {
@@ -72,17 +91,15 @@ public:
           if (!dev->init())
             { spanicf("failed to initialize device(=<0x%p>)", dev); }
           static constexpr uint32_t period = Device::refresh().count();
-          govern<period>( [&](){
-            dev->update();
-          } );
+          govern<period>( [&](){ dev->update(); } );
         },
         &_dev),
       // BLE handlers run on the opposite core.
       Task<Device>("BLE", 1-ARDUINO_RUNNING_CORE,
         [](void *pArg) {
           auto dev = static_cast<Device *>(pArg);
-          auto rad = Radio<Device>(*dev);
-          static constexpr uint32_t period = Radio<Device>::refresh().count();
+          auto rad = Radio(*dev, ipc, root);
+          static constexpr uint32_t period = Radio::refresh().count();
           govern<period>( [&](){ rad.update(); } );
         },
         &_dev),
@@ -97,19 +114,20 @@ public:
   }
 
 private:
-  Device                      _dev;
+  Device _dev;
   std::array<Task<Device>, 2> _tsk;
 };
 
 Target target;
 
 void setup() {
-  Serial.begin(115200);
+  // NOOP unless DEBUG is defined non-zero (see debug.hpp)
+  native::log::init();
 
   target.init();
 
-  vTaskSuspend(0); // Suspend ourselves, so that only the tasks created above
-                   // are allocated any processing time.
+  // Suspend ourselves so that only the tasks created above are allocated time.
+  vTaskSuspend(nullptr);
 }
 
 void loop() { yield(); }
