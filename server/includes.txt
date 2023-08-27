@@ -1,3 +1,4 @@
 -I/opt/arduino/lib/packages/arduino/tools/CMSIS/4.5.0/CMSIS/Include
 -I/opt/FreePOS/src/api
 -I/opt/FreePOS/src/lib/ticks/src
+-I/opt/FreePOS/src/lib/nanosensors/src
