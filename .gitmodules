@@ -4,3 +4,6 @@
 [submodule "lib/ticks"]
 	path = lib/ticks
 	url = https://github.com/ardnew/ticks
+[submodule "lib/nanosensors"]
+	path = lib/nanosensors
+	url = https://github.com/ardnew/nanosensors
