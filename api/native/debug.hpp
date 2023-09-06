@@ -12,7 +12,7 @@
 
 // Three different options for the DEBUG macro:
 //   0=Disable, 1=Enable, undef=CORE_DEBUG_LEVEL (ESP-IDF/Arduino)
-#define DEBUG 1
+// #define DEBUG 1
 
 // If you undefined DEBUG above, you can enable/disable debug statements via
 // ESP-IDF or Arduino Board Configuration (IDE/CLI, VS Code extension, etc.).

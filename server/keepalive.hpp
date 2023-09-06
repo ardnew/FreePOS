@@ -7,10 +7,10 @@ class KeepAliveData: public SensorData {
   using SensorData::SensorData;
 public:
   uint32_t pulse;
-  using GattType = decltype(pulse);
+  using Type = decltype(pulse);
 };
 
-class KeepAlive: public Sensor<KeepAlive, KeepAliveData, 1000U> {
+class KeepAlive: public Sensor<KeepAlive, KeepAliveData, 500U> {
 protected:
   void init() override {}
   void poll(msecu32_t const s) override {

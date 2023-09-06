@@ -27,18 +27,18 @@ protected:
   BLEAdvertisedDevice *_server;
   BLEClient *_client;
   BLERemoteCharacteristic *_charPulses;
-  BLERemoteCharacteristic *_charAccelX;
-  BLERemoteCharacteristic *_charAccelY;
-  BLERemoteCharacteristic *_charAccelZ;
-  BLERemoteCharacteristic *_charBarPsi;
-  BLERemoteCharacteristic *_charPrecip;
-  BLERemoteCharacteristic *_charProxim;
-  BLERemoteCharacteristic *_charAirTmp;
-  BLERemoteCharacteristic *_charH2OTmp;
+  BLERemoteCharacteristic *_charAccXYZ;
   BLERemoteCharacteristic *_charWeight;
 
+  //BLERemoteCharacteristic *_charBarPsi;
+  //BLERemoteCharacteristic *_charPrecip;
+  //BLERemoteCharacteristic *_charProxim;
+  //BLERemoteCharacteristic *_charAirTmp;
+  //BLERemoteCharacteristic *_charH2OTmp;
+
+
 protected:
-  static constexpr msecu32_t _refresh = msecu32_t{100};
+  static constexpr msecu32_t _refresh = msecu32_t{500};
 public:
   static inline constexpr msecu32_t refresh() { return _refresh; }
 
@@ -94,7 +94,7 @@ public:
 
     case State::ConnectStart:
       _state = State::ConnectStart;
-      getScan()->stop();
+      // getScan()->stop();
       return true;
 
     case State::RegisterStart:
@@ -138,7 +138,12 @@ public:
       }
       break;
 
-    case State::PairedAndReady:
+    case State::PairedAndReady: {
+        Packet<uint32_t> PulsesPkt;
+        if (_chan.Pulses.pop(PulsesPkt)) {
+          _alive.update(PulsesPkt.value());
+        }
+      }
       break;
 
     default:
@@ -152,7 +157,7 @@ public:
       if (dev.haveServiceUUID() &&
           dev.isAdvertisingService(BLEUUID(UUID_BLE_SENSORS_SERVICE))) {
         stracef("%s", "create server");
-        // getScan()->stop();
+        getScan()->stop();
         _server = new BLEAdvertisedDevice(dev);
         stracef("%s", "connect to device");
         setState(State::ConnectStart);
@@ -197,106 +202,21 @@ public:
     }
     if (_charPulses->canNotify()) {
       _charPulses->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify)
-            { _alive.update(pData, length); });
-    }
-
-    stracef("%s", "uuidCharAccelX");
-    if ((_charAccelX = svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_ACCELX_CHAR))) == nullptr) {
-      return false;
-    }
-    if (_charAccelX->canNotify()) {
-      _charAccelX->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify) {
-          _chan.AccelX.push(Packet<float>(pData, length));
+        [&](BLERemoteCharacteristic *, uint8_t *data, size_t len, bool) {
+          _chan.Pulses.push(data, len);
         });
     }
 
-    stracef("%s", "uuidCharAccelY");
-    if ((_charAccelY = svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_ACCELY_CHAR))) == nullptr) {
+    stracef("%s", "uuidCharAccXYZ");
+    if ((_charAccXYZ = svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_ACCXYZ_CHAR))) == nullptr) {
       return false;
     }
-    if (_charAccelY->canNotify()) {
-      _charAccelY->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify) {
-          _chan.AccelY.push(Packet<float>(pData, length));
+    if (_charAccXYZ->canNotify()) {
+      _charAccXYZ->registerForNotify(
+        [&](BLERemoteCharacteristic *, uint8_t *data, size_t len, bool) {
+          _chan.AccXyz.push(data, len);
         });
     }
-
-    stracef("%s", "uuidCharAccelZ");
-    if ((_charAccelZ = svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_ACCELZ_CHAR))) == nullptr) {
-      return false;
-    }
-    if (_charAccelZ->canNotify()) {
-      _charAccelZ->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify) {
-          _chan.AccelZ.push(Packet<float>(pData, length));
-        });
-    }
-
-    stracef("%s", "uuidCharBarPsi");
-    if ((_charBarPsi = svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_BARPSI_CHAR))) == nullptr) {
-      return false;
-    }
-    if (_charBarPsi->canNotify()) {
-      _charBarPsi->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify) {
-          _chan.BarPsi.push(Packet<float>(pData, length));
-        });
-    }
-
-    stracef("%s", "uuidCharPrecip");
-    if ((_charPrecip = svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_PRECIP_CHAR))) == nullptr) {
-      return false;
-    }
-    if (_charPrecip->canNotify()) {
-      _charPrecip->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify) {
-          _chan.Precip.push(Packet<float>(pData, length));
-        });
-    }
-
-    stracef("%s", "uuidCharProxim");
-    if ((_charProxim = svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_PROXIM_CHAR))) == nullptr) {
-      return false;
-    }
-    if (_charProxim->canNotify()) {
-      _charProxim->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify) {
-          _chan.Proxim.push(Packet<int32_t>(pData, length));
-        });
-    }
-
-    stracef("%s", "uuidCharAirTmp");
-    if ((_charAirTmp = svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_AIRTMP_CHAR))) == nullptr) {
-      return false;
-    }
-    if (_charAirTmp->canNotify()) {
-      _charAirTmp->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify) {
-          _chan.AirTmp.push(Packet<float>(pData, length));
-        });
-    }
-
-    // stracef("%s", "uuidCharH2OTmp");
-    // if ((_charH2OTmp = svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_H2OTMP_CHAR))) == nullptr) {
-    //   return false;
-    // }
-    // if (_charH2OTmp->canNotify()) {
-    //   _charH2OTmp->registerForNotify(
-    //     [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-    //       uint8_t* pData, size_t length, bool isNotify) {
-    //       _chan.H2OTmp.push(Packet<float>(pData, length));
-    //     });
-    // }
 
     stracef("%s", "uuidCharWeight");
     if ((_charWeight = svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_WEIGHT_CHAR))) == nullptr) {
@@ -304,11 +224,63 @@ public:
     }
     if (_charWeight->canNotify()) {
       _charWeight->registerForNotify(
-        [&](BLERemoteCharacteristic* pBLERemoteCharacteristic,
-          uint8_t* pData, size_t length, bool isNotify) {
-          _chan.Weight.push(Packet<float>(pData, length));
+        [&](BLERemoteCharacteristic *, uint8_t *data, size_t len, bool) {
+          _chan.Weight.push(data, len);
         });
     }
+
+    // stracef("%s", "uuidCharBarPsi");
+    // if ((_charBarPsi = svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_BARPSI_CHAR))) == nullptr) {
+    //   return false;
+    // }
+    // if (_charBarPsi->canNotify()) {
+    //   _charBarPsi->registerForNotify(
+    //     [&](BLERemoteCharacteristic *, uint8_t *data, size_t len, bool) {
+    //       _chan.BarPsi.push(data, len);
+    //     });
+    // }
+
+    // stracef("%s", "uuidCharPrecip");
+    // if ((_charPrecip = svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_PRECIP_CHAR))) == nullptr) {
+    //   return false;
+    // }
+    // if (_charPrecip->canNotify()) {
+    //   _charPrecip->registerForNotify(
+    //     [&](BLERemoteCharacteristic *, uint8_t *data, size_t len, bool) {
+    //       _chan.Precip.push(data, len);
+    //     });
+    // }
+
+    // stracef("%s", "uuidCharProxim");
+    // if ((_charProxim = svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_PROXIM_CHAR))) == nullptr) {
+    //   return false;
+    // }
+    // if (_charProxim->canNotify()) {
+    //   _charProxim->registerForNotify(
+    //     [&](BLERemoteCharacteristic *, uint8_t *data, size_t len, bool) {
+    //       _chan.Proxim.push(data, len);
+    //     });
+    // }
+
+    // stracef("%s", "uuidCharAirTmp");
+    // if ((_charAirTmp = svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_AIRTMP_CHAR))) == nullptr) {
+    //   return false;
+    // }
+    // if (_charAirTmp->canNotify()) {
+
+    //   _charAirTmp->registerForNotify(
+    //     [&](BLERemoteCharacteristic *, uint8_t *data, size_t len, bool) {
+    //       _chan.AirTmp.push(data, len);
+    //     });
+    // }
+
+    // stracef("%s", "uuidCharH2OTmp");
+    // if ((_charH2OTmp = svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_H2OTMP_CHAR))) == nullptr) {
+    //   return false;
+    // }
+    // if (_charH2OTmp->canNotify()) {
+    //   _charH2OTmp->registerForNotify(   _chan.H2OTmp.onNotify());
+    // }
 
     stracef("%s", "ok!");
     setState(State::PairedAndReady);

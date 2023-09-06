@@ -1,10 +1,12 @@
-#ifndef tabview_hpp
-#define tabview_hpp
+#ifndef ui_tabview_hpp
+#define ui_tabview_hpp
 
 #include "../spec.hpp"
 #include "../ipc.hpp"
+#include "../icons.h"
 
 #include "chart.hpp"
+#include "weight.hpp"
 
 class TabView: public View {
 private:
@@ -21,12 +23,10 @@ protected:
   IPC *_chan;
   lv_obj_t *_base;
   Chart _chart;
+  Weight _weight;
 
 public:
-  void connect(IPC *chan) {
-    _chan = chan;
-    _chart.connect(chan);
-  }
+
   bool init(lv_obj_t *root) override {
     _base = lv_tabview_create(root, LV_DIR_LEFT, 80);
 
@@ -42,7 +42,10 @@ public:
     lv_obj_set_style_text_color(tab_btns, lv_palette_lighten(LV_PALETTE_GREY, 5), 0);
     lv_obj_set_style_border_side(tab_btns, LV_BORDER_SIDE_RIGHT, LV_PART_ITEMS | LV_STATE_CHECKED);
 
+    // lv_obj_set_style_text_font(_base, &mug_24, 0);
+
     _chart.init(lv_tabview_add_tab(_base, "Chart"));
+    _weight.init(lv_tabview_add_tab(_base, "Weight"));
 
     lv_obj_t *tab2 = lv_tabview_add_tab(_base, "Tab 2");
     lv_obj_t *tab3 = lv_tabview_add_tab(_base, "Tab 3");
@@ -66,11 +69,17 @@ public:
 
     return true;
   }
+  void connect(IPC *chan) {
+    _chan = chan;
+    _chart.connect(chan);
+    _weight.connect(chan);
+  }
   void update(msecu32_t const now) override {
     _chart.update(now);
+    _weight.update(now);
   }
   inline std::string title() override { return "TabView"; }
   // operator lv_obj_t*() { return _base; }
 };
 
-#endif // tabview_hpp
+#endif // ui_tabview_hpp

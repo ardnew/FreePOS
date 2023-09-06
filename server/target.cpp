@@ -4,9 +4,7 @@
 Target::Target():
   _sensors(UUID_BLE_SENSORS_SERVICE),
   _pulsesChar(UUID_BLE_SENSORS_PULSES_CHAR, BLE_SENSORS_CHAR_MODE),
-  _accelXChar(UUID_BLE_SENSORS_ACCELX_CHAR, BLE_SENSORS_CHAR_MODE),
-  _accelYChar(UUID_BLE_SENSORS_ACCELY_CHAR, BLE_SENSORS_CHAR_MODE),
-  _accelZChar(UUID_BLE_SENSORS_ACCELZ_CHAR, BLE_SENSORS_CHAR_MODE),
+  _accXYZChar(UUID_BLE_SENSORS_ACCXYZ_CHAR, BLE_SENSORS_CHAR_MODE),
   _barPsiChar(UUID_BLE_SENSORS_BARPSI_CHAR, BLE_SENSORS_CHAR_MODE),
   _precipChar(UUID_BLE_SENSORS_PRECIP_CHAR, BLE_SENSORS_CHAR_MODE),
   _proximChar(UUID_BLE_SENSORS_PROXIM_CHAR, BLE_SENSORS_CHAR_MODE),
@@ -33,9 +31,7 @@ bool Target::init() {
   BLE.setAdvertisedService(_sensors);
 
   _sensors.addCharacteristic(_pulsesChar);
-  _sensors.addCharacteristic(_accelXChar);
-  _sensors.addCharacteristic(_accelYChar);
-  _sensors.addCharacteristic(_accelZChar);
+  _sensors.addCharacteristic(_accXYZChar);
   _sensors.addCharacteristic(_barPsiChar);
   _sensors.addCharacteristic(_precipChar);
   _sensors.addCharacteristic(_proximChar);
@@ -62,7 +58,7 @@ bool Target::init() {
 // luminous flux (lumen) 0x2730
   swritef("%s", "wireless services initialized");
 
-  delay(100);
+  rtos::ThisThread::sleep_for(100ms);
   digitalWrite(PIN_ENABLE_SENSORS_3V3, HIGH);
   digitalWrite(PIN_ENABLE_I2C_PULLUP, HIGH);
 
@@ -78,7 +74,7 @@ bool Target::init() {
   _proximity.start();
   _temperature.start();
   // _thermometer.start();
-  // _scale.start();
+  _scale.start();
 
   swritef("%s", "sensors initialized");
 
@@ -93,13 +89,11 @@ void Target::update() {
     while (central.connected()) {
       AccelerometerData acc;
       if (_accelerometer.pop(acc)) {
-        _accelXChar.writeValue(Packet<decltype(acc.x)>(acc.x, acc.time()));
-        _accelYChar.writeValue(Packet<decltype(acc.y)>(acc.y, acc.time()));
-        _accelZChar.writeValue(Packet<decltype(acc.z)>(acc.z, acc.time()));
+        _accXYZChar.writeValue(Packet<AccelerometerData::Type>({acc.x, acc.y, acc.z}, acc.time()));
       }
       BarometerData bar;
       if (_barometer.pop(bar)) {
-        _barPsiChar.writeValue(Packet<decltype(bar.psi)>(bar.psi, bar.time()));
+        _barPsiChar.writeValue(Packet<BarometerData::Type>(bar.psi, bar.time()));
       }
       //ColorData col;
       //if (_color.pop(col)) {}
@@ -109,11 +103,11 @@ void Target::update() {
       //if (_gyroscope.pop(gyr)) {}
       HumidityData hum;
       if (_humidity.pop(hum)) {
-        _precipChar.writeValue(Packet<decltype(hum.humidity)>(hum.humidity, hum.time()));
+        _precipChar.writeValue(Packet<HumidityData::Type>(hum.humidity, hum.time()));
       }
       KeepAliveData kee;
       if (_keepAlive.pop(kee)) {
-        _pulsesChar.writeValue(Packet<decltype(kee.pulse)>(kee.pulse, kee.time()));
+        _pulsesChar.writeValue(Packet<KeepAliveData::Type>(kee.pulse, kee.time()));
       }
       //MagnetometerData mag;
       //if (_magnetometer.pop(mag)) {}
@@ -121,20 +115,23 @@ void Target::update() {
       //if (_microphone.pop(mic)) {}
       ProximityData pro;
       if (_proximity.pop(pro)) {
-        _proximChar.writeValue(Packet<decltype(pro.proximity)>(pro.proximity, pro.time()));
+        _proximChar.writeValue(Packet<ProximityData::Type>(pro.proximity, pro.time()));
       }
       TemperatureData tem;
       if (_temperature.pop(tem)) {
-        _airTmpChar.writeValue(Packet<decltype(tem.fahrenheit)>(tem.fahrenheit, tem.time()));
+        _airTmpChar.writeValue(Packet<TemperatureData::Type>(tem.fahrenheit, tem.time()));
       }
       //ThermometerData the;
       //if (_thermometer.pop(the)) {
-      //  _h2oTmpChar.writeValue(Packet<decltype(the.fahrenheit)>(the.fahrenheit, the.time()));
+      //  _h2oTmpChar.writeValue(Packet<ThermometerData::Type>(the.fahrenheit, the.time()));
       //}
-      //ScaleData sca;
-      //if (_scale.pop(sca)) {
-      //  _weightChar.writeValue(Packet<decltype(sca.read)>(sca.read - sca.zero, sca.time()));
-      //}
+      ScaleData sca;
+      if (_scale.pop(sca)) {
+        Packet<ScaleData::Type> pkt(sca.read, sca.time());
+        swritef("%s", "≡===≡===≡===≡===≡===≡===≡===≡===≡===≡===≡===≡===≡===≡===≡");
+        pkt.describe();
+        _weightChar.writeValue(std::move(pkt));
+      }
     }
     digitalWrite(LED_BUILTIN, LOW);
     swritef("disconnected: %s", central.address());

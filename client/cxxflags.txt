@@ -1,0 +1,2 @@
+-Wfatal-errors
+-std=gnu++17

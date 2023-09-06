@@ -8,16 +8,14 @@
 class Target {
 private:
   BLEService _sensors;
-  BLETaggedCharacteristic<KeepAliveData::GattType> _pulsesChar;
-  BLETaggedCharacteristic<AccelerometerData::GattType> _accelXChar;
-  BLETaggedCharacteristic<AccelerometerData::GattType> _accelYChar;
-  BLETaggedCharacteristic<AccelerometerData::GattType> _accelZChar;
-  BLETaggedCharacteristic<BarometerData::GattType> _barPsiChar;
-  BLETaggedCharacteristic<HumidityData::GattType> _precipChar;
-  BLETaggedCharacteristic<ProximityData::GattType> _proximChar;
-  BLETaggedCharacteristic<TemperatureData::GattType> _airTmpChar;
-  // BLETaggedCharacteristic<ThermometerData::GattType> _h2oTmpChar;
-  BLETaggedCharacteristic<ScaleData::GattType> _weightChar;
+  BLETaggedCharacteristic<KeepAliveData::Type> _pulsesChar;
+  BLETaggedCharacteristic<AccelerometerData::Type> _accXYZChar;
+  BLETaggedCharacteristic<BarometerData::Type> _barPsiChar;
+  BLETaggedCharacteristic<HumidityData::Type> _precipChar;
+  BLETaggedCharacteristic<ProximityData::Type> _proximChar;
+  BLETaggedCharacteristic<TemperatureData::Type> _airTmpChar;
+  // BLETaggedCharacteristic<ThermometerData::Type> _h2oTmpChar;
+  BLETaggedCharacteristic<ScaleData::Type> _weightChar;
 protected:
   Accelerometer _accelerometer;
   Barometer _barometer;
@@ -31,7 +29,7 @@ protected:
   Proximity _proximity;
   Temperature _temperature;
   //Thermometer _thermometer;
-  //Scale _scale;
+  Scale _scale;
 public:
   Target();
   virtual ~Target();

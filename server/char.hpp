@@ -12,11 +12,8 @@ public:
   }
 };
 
-using BLETaggedShortCharacteristic         = BLETaggedCharacteristic<short>;
-using BLETaggedUnsignedShortCharacteristic = BLETaggedCharacteristic<unsigned short>;
-using BLETaggedIntCharacteristic           = BLETaggedCharacteristic<int>;
-using BLETaggedUnsignedIntCharacteristic   = BLETaggedCharacteristic<unsigned int>;
-using BLETaggedFloatCharacteristic         = BLETaggedCharacteristic<float>;
+template <typename T, size_t N>
+using BLETaggedArrayCharacteristic = BLETaggedCharacteristic<std::array<T, N>>;
 
 constexpr auto BLE_SENSORS_CHAR_MODE = BLERead | BLENotify | BLEBroadcast;
 

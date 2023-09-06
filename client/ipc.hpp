@@ -3,44 +3,35 @@
 
 #include "spec.hpp"
 
-class IPC {
-private:
-  static constexpr size_t ESz = 32;
+template <typename T, size_t N = 32>
+class PacketBuf: public RingBuf<Packet<T>, N> {
+  using RingBuf<Packet<T>, N>::RingBuf;
+  std::mutex _mutx;
 public:
-  // Tupe definitions for all FIFOs used.
-  using Int32 = RingBuf<Packet<int32_t>, ESz>;
-  using Float = RingBuf<Packet<float>, ESz>;
+  bool push(const uint8_t *ptr, const size_t size) {
+    std::lock_guard<std::mutex> lck(_mutx);
+    return RingBuf<Packet<T>, N>::pushOverwrite(Packet<T>(ptr, size));
+  }
+};
 
+class IPC {
+public:
   IPC(): // Constructor, no args required.
+    // UInt32 FIFOs
+    Pulses{},
+    // Int32 FIFOs
+    Proxim{},
     // Float FIFOs
-    AccelX{}, AccelY{}, AccelZ{},
     BarPsi{}, Precip{}, AirTmp{},
     H2OTmp{}, Weight{},
-    // Int32 FIFOs
-    Proxim{}
+    // Float 3D FIFOs
+    AccXyz{}
   {}
 
-  /// Float FIFOs
-
-  struct FloatFIFO: public Float {
-    std::mutex _mutx;
-    const bool push(const Packet<float> &fd) {
-      std::lock_guard<std::mutex> lck(_mutx);
-      return Float::push(fd);
-    }
-  } AccelX, AccelY, AccelZ,
-    BarPsi, Precip, AirTmp,
-    H2OTmp, Weight;
-
-  /// Int32 FIFOs
-
-  struct Int32FIFO: public Int32 {
-    std::mutex _mutx;
-    bool push(const Packet<int32_t> &id) {
-      std::lock_guard<std::mutex> lck(_mutx);
-      return Int32::push(id);
-    }
-  } Proxim;
+  PacketBuf<uint32_t> Pulses;
+  PacketBuf<int32_t> Proxim;
+  PacketBuf<float> BarPsi, Precip, AirTmp, H2OTmp, Weight;
+  PacketBuf<std::array<float, 3>> AccXyz;
 };
 
 #endif // ipc_hpp

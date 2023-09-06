@@ -20,6 +20,7 @@
 #include <stdint/ticks.h>
 
 #include <algorithm>
+#include <cmath>
 #include <chrono>
 #include <cstdint>
 #include <iomanip>
@@ -30,5 +31,8 @@
 #include <string>
 #include <tuple>
 #include <vector>
+
+// Add any default namespaces below.
+using namespace std::literals::chrono_literals;
 
 #endif // api_native_core_hpp

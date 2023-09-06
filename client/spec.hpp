@@ -12,6 +12,7 @@
 
 // ESP32-3248S035
 #include <ESP323248S035.h>
+#include <callback.hpp>
 
 // lib/RingBuffer
 #include <RingBuf.h>
@@ -21,5 +22,8 @@
 
 // StatusLED
 #include <StatusLED.h>
+
+// BLE
+#include <BLEDevice.h>
 
 #endif // spec_hpp
