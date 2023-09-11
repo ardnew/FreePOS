@@ -1,12 +1,12 @@
 [submodule "lib/RingBuffer"]
 	path = lib/RingBuffer
 	url = https://github.com/Locoduino/RingBuffer.git
-[submodule "lib/ticks"]
-	path = lib/ticks
-	url = https://github.com/ardnew/ticks
 [submodule "lib/nanosensors"]
 	path = lib/nanosensors
 	url = https://github.com/ardnew/nanosensors
 [submodule "lib/ESP32-3248S035"]
 	path = lib/ESP32-3248S035
 	url = https://github.com/ardnew/ESP32-3248S035
+[submodule "lib/cronos"]
+	path = lib/cronos
+	url = https://github.com/ardnew/cronos

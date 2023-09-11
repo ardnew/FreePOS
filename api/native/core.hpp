@@ -4,24 +4,24 @@
 #ifdef ARDUINO
 #include <Arduino.h>
 #ifdef ESP_PLATFORM
+#include <BLEDevice.h>
+#include <esp_err.h>
+#include <esp_task_wdt.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #include <sdkconfig.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <esp_err.h>
-#include <esp_task_wdt.h>
-#include <BLEDevice.h>
 #else // ! ESP_PLATFORM
 #include <ArduinoBLE.h>
 #endif // (!) ESP_PLATFORM
 #endif // ARDUINO
 
-#include <stdint/ticks.h>
+#include <cronos.h>
 
 #include <algorithm>
-#include <cmath>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <iomanip>
 #include <mutex>
