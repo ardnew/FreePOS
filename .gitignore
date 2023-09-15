@@ -3,6 +3,3 @@
 **/.fqbn/
 **/.vscode/
 **/*.code-workspace
-**/*.editorconfig
-**/*partitions*.csv
-/lib/ArduinoBLE
