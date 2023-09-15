@@ -1,4 +1,5 @@
 #include "target.hpp"
+#include <system_nrf52.h>
 
 Target target;
 

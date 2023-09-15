@@ -1,2 +1,0 @@
--L/opt/arduino/lib/packages/arduino/tools/CMSIS/4.5.0/CMSIS/Lib/GCC
--larm_cortexM4l_math
