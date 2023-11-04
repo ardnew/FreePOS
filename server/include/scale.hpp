@@ -1,8 +1,9 @@
-#ifndef scale_hpp
-#define scale_hpp
+#ifndef include_scale_hpp
+#define include_scale_hpp
 
 #include <HX711.h>
 
+#include "wiring.hpp"
 #include "spec.hpp"
 
 class ScaleData: public SensorData {
@@ -15,7 +16,7 @@ public:
 class Scale: private HX711, public Sensor<Scale, ScaleData, 25U> {
 protected:
   void init() override {
-    begin(SCALE_DATA_PIN, SCALE_CLOCK_PIN);
+    begin(SCALE_GPIO_DAT_PIN, SCALE_GPIO_CLK_PIN);
     set_scale(SCALE_FACTOR);
     set_offset(SCALE_OFFSET);
     tare();
@@ -28,4 +29,4 @@ protected:
   std::string name() override { return "Scale"; }
 };
 
-#endif // scale_hpp
+#endif // include_scale_hpp

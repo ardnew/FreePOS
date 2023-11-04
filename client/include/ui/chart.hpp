@@ -61,33 +61,33 @@ public:
   }
   void update(msecu32_t const) override {
     if (_chan) {
-      static Packet<std::array<float, 3U>> AccXyzPkt;
+      static packet::Data<std::array<float, 3U>> AccXyzPkt;
       if (_chan->AccXyz.pop(AccXyzPkt)) {
         lv_chart_set_next_value(_base, _accelXSeries, 100.0 * AccXyzPkt.value()[0]);
         lv_chart_set_next_value(_base, _accelYSeries, 100.0 * AccXyzPkt.value()[1]);
         lv_chart_set_next_value(_base, _accelZSeries, 100.0 * AccXyzPkt.value()[2]);
       }
-      // Packet<float> BarPsiPkt;
+      // packet::Data<float> BarPsiPkt;
       // if (_chan->BarPsi.pop(BarPsiPkt)) {
       //   //lv_chart_set_next_value(_base, _barPsiSeries, BarPsiPkt.value());
       // }
-      // Packet<float> PrecipPkt;
+      // packet::Data<float> PrecipPkt;
       // if (_chan->Precip.pop(PrecipPkt)) {
       //   //lv_chart_set_next_value(_base, _precipSeries, PrecipPkt.value());
       // }
-      // Packet<int32_t> ProximPkt;
+      // packet::Data<int32_t> ProximPkt;
       // if (_chan->Proxim.pop(ProximPkt)) {
       //   //lv_chart_set_next_value(_base, _proximSeries, ProximPkt.value());
       // }
-      // Packet<float> AirTmpPkt;
+      // packet::Data<float> AirTmpPkt;
       // if (_chan->AirTmp.pop(AirTmpPkt)) {
       //   //lv_chart_set_next_value(_base, _airTmpSeries, AirTmpPkt.value());
       // }
-      // Packet<float> H2OTmpPkt;
+      // packet::Data<float> H2OTmpPkt;
       // if (_chan->H2OTmp.pop(H2OTmpPkt)) {
       //   //lv_chart_set_next_value(_base, _h2OTmpSeries, H2OTmpPkt.value());
       // }
-      // Packet<float> WeightPkt;
+      // packet::Data<float> WeightPkt;
       // if (_chan->Weight.pop(WeightPkt)) {
       //   //lv_chart_set_next_value(_base, _weightSeries, WeightPkt.value());
       // }

@@ -1,21 +1,15 @@
-#ifndef target_hpp
-#define target_hpp
+#ifndef include_target_hpp
+#define include_target_hpp
 
-#include "keepalive.hpp"
-#include "scale.hpp"
-#include "char.hpp"
+#include "spec.hpp"
 
-class Target {
-private:
-  BLEService _sensors;
-  BLETaggedCharacteristic<KeepAliveData::Type> _pulsesChar;
-  BLETaggedCharacteristic<AccelerometerData::Type> _accXYZChar;
-  BLETaggedCharacteristic<BarometerData::Type> _barPsiChar;
-  BLETaggedCharacteristic<HumidityData::Type> _precipChar;
-  BLETaggedCharacteristic<ProximityData::Type> _proximChar;
-  BLETaggedCharacteristic<TemperatureData::Type> _airTmpChar;
-  // BLETaggedCharacteristic<ThermometerData::Type> _h2oTmpChar;
-  BLETaggedCharacteristic<ScaleData::Type> _weightChar;
+#if defined(FREEPOS_LINK_BLE)
+  #include <ble/link.hpp>
+#elif defined(FREEPOS_LINK_HID)
+  #include <hid/link.hpp>
+#endif
+
+class Target: private link::Hub {
 protected:
   Accelerometer _accelerometer;
   Barometer _barometer;
@@ -27,9 +21,10 @@ protected:
   //Magnetometer _magnetometer;
   //Microphone _microphone;
   Proximity _proximity;
-  Temperature _temperature;
-  //Thermometer _thermometer;
   Scale _scale;
+  Temperature _temperature;
+  // Thermometer _thermometer;
+
 public:
   Target();
   virtual ~Target();
@@ -39,4 +34,4 @@ public:
 
 extern Target target;
 
-#endif // target_hpp
+#endif // include_target_hpp

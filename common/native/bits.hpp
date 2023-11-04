@@ -1,5 +1,5 @@
-#ifndef api_native_bits_hpp
-#define api_native_bits_hpp
+#ifndef common_native_bits_hpp
+#define common_native_bits_hpp
 
 #include "native/core.hpp"
 #include "macro.hpp"
@@ -19,12 +19,12 @@ enum class ByteOrder: bool {
 template <ByteOrder> struct Bytes;
 
 template <> struct Bytes<ByteOrder::MSBFirst> {
-  FUNCTION_FORWARD(copy, std::reverse_copy);
+  decl_func_alias_(copy, std::reverse_copy);
 };
 
 
 template <> struct Bytes<ByteOrder::LSBFirst> {
-  FUNCTION_FORWARD(copy, std::copy);
+  decl_func_alias_(copy, std::copy);
 };
 
-#endif // api_native_bits_hpp
+#endif // common_native_bits_hpp

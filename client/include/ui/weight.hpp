@@ -72,7 +72,7 @@ public:
     sputf("%s", "update");
     if (_chan) {
       sputf(" → %s", "_chan");
-      Packet<float> pwt;
+      packet::Data<float> pwt;
       if (_chan->Weight.pop(pwt)) {
         sputf(" → %s", "pop");
         swritef("update weight | %p |", _chan);

@@ -50,7 +50,7 @@ public:
       : _dev(dev), _view(root), _chan(chan), _doScan(true), _doConn(false),
         _isConn(false), _alive(std::chrono::seconds{5}),
         _state(dev.hw<RGB_PWM>()) {
-    BLEDevice::init(BLEDeviceName);
+    BLEDevice::init(DeviceName);
     BLEScan *s = getScan();
     s->setAdvertisedDeviceCallbacks(this);
     s->setInterval(1349);
@@ -144,7 +144,7 @@ public:
       break;
 
     case State::PairedAndReady: {
-      Packet<uint32_t> PulsesPkt;
+      packet::Data<uint32_t> PulsesPkt;
       if (_chan.Pulses.pop(PulsesPkt)) {
         _alive.update(PulsesPkt.value());
       }
@@ -157,10 +157,10 @@ public:
   }
 
   void onResult(BLEAdvertisedDevice dev) {
-    stracef("[%s] %s: %s", BLEDeviceName, "onResult", dev.getName().c_str());
-    if (dev.getName() == BLEDeviceName) {
+    stracef("[%s] %s: %s", DeviceName, "onResult", dev.getName().c_str());
+    if (dev.getName() == DeviceName) {
       if (dev.haveServiceUUID() &&
-          dev.isAdvertisingService(BLEUUID(UUID_BLE_SENSORS_SERVICE))) {
+          dev.isAdvertisingService(BLEUUID(UUID_SENSORS_SERVICE))) {
         stracef("%s", "create server");
         getScan()->stop();
         _server = new BLEAdvertisedDevice(dev);
@@ -197,14 +197,14 @@ public:
 
     stracef("%s", "getService");
     BLERemoteService *svc;
-    if ((svc = _client->getService(BLEUUID(UUID_BLE_SENSORS_SERVICE))) ==
+    if ((svc = _client->getService(BLEUUID(UUID_SENSORS_SERVICE))) ==
         nullptr) {
       return false;
     }
 
     stracef("%s", "uuidCharBleWdt");
     if ((_charPulses = svc->getCharacteristic(
-             BLEUUID(UUID_BLE_SENSORS_PULSES_CHAR))) == nullptr) {
+             BLEUUID(UUID_SENSORS_PULSES_CHAR))) == nullptr) {
       return false;
     }
     if (_charPulses->canNotify()) {
@@ -216,7 +216,7 @@ public:
 
     stracef("%s", "uuidCharAccXYZ");
     if ((_charAccXYZ = svc->getCharacteristic(
-             BLEUUID(UUID_BLE_SENSORS_ACCXYZ_CHAR))) == nullptr) {
+             BLEUUID(UUID_SENSORS_ACCXYZ_CHAR))) == nullptr) {
       return false;
     }
     if (_charAccXYZ->canNotify()) {
@@ -228,7 +228,7 @@ public:
 
     stracef("%s", "uuidCharWeight");
     if ((_charWeight = svc->getCharacteristic(
-             BLEUUID(UUID_BLE_SENSORS_WEIGHT_CHAR))) == nullptr) {
+             BLEUUID(UUID_SENSORS_WEIGHT_CHAR))) == nullptr) {
       return false;
     }
     if (_charWeight->canNotify()) {
@@ -240,7 +240,7 @@ public:
 
     // stracef("%s", "uuidCharBarPsi");
     // if ((_charBarPsi =
-    // svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_BARPSI_CHAR))) ==
+    // svc->getCharacteristic(BLEUUID(UUID_SENSORS_BARPSI_CHAR))) ==
     // nullptr) {
     //   return false;
     // }
@@ -253,7 +253,7 @@ public:
 
     // stracef("%s", "uuidCharPrecip");
     // if ((_charPrecip =
-    // svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_PRECIP_CHAR))) ==
+    // svc->getCharacteristic(BLEUUID(UUID_SENSORS_PRECIP_CHAR))) ==
     // nullptr) {
     //   return false;
     // }
@@ -266,7 +266,7 @@ public:
 
     // stracef("%s", "uuidCharProxim");
     // if ((_charProxim =
-    // svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_PROXIM_CHAR))) ==
+    // svc->getCharacteristic(BLEUUID(UUID_SENSORS_PROXIM_CHAR))) ==
     // nullptr) {
     //   return false;
     // }
@@ -279,7 +279,7 @@ public:
 
     // stracef("%s", "uuidCharAirTmp");
     // if ((_charAirTmp =
-    // svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_AIRTMP_CHAR))) ==
+    // svc->getCharacteristic(BLEUUID(UUID_SENSORS_AIRTMP_CHAR))) ==
     // nullptr) {
     //   return false;
     // }
@@ -293,7 +293,7 @@ public:
 
     // stracef("%s", "uuidCharH2OTmp");
     // if ((_charH2OTmp =
-    // svc->getCharacteristic(BLEUUID(UUID_BLE_SENSORS_H2OTMP_CHAR))) ==
+    // svc->getCharacteristic(BLEUUID(UUID_SENSORS_H2OTMP_CHAR))) ==
     // nullptr) {
     //   return false;
     // }

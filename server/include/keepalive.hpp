@@ -1,5 +1,5 @@
-#ifndef keepalive_hpp
-#define keepalive_hpp
+#ifndef include_keepalive_hpp
+#define include_keepalive_hpp
 
 #include "spec.hpp"
 
@@ -22,4 +22,4 @@ protected:
   std::string name() override { return "KeepAlive"; }
 };
 
-#endif // keepalive_hpp
+#endif // include_keepalive_hpp

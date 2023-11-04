@@ -1,5 +1,5 @@
-#ifndef api_native_debug_hpp
-#define api_native_debug_hpp
+#ifndef common_native_debug_hpp
+#define common_native_debug_hpp
 
 #include "native/core.hpp"
 
@@ -9,23 +9,32 @@
 //     -> "static assertion failed: sizeof(void*) == sizeof(char)"
 #define compiler_assert(...) static_assert(__VA_ARGS__, #__VA_ARGS__)
 
-// Three different options for the DEBUG macro:
-//   0=Disable, 1=Enable, undef=CORE_DEBUG_LEVEL (ESP-IDF/Arduino)
+// Four different options for the DEBUG macro:
+//   0: Disable,
+//   1: Enable,
+//   undef:
+//     CORE_DEBUG_LEVEL (ESP-IDF/Arduino) if DEBUG_SYNC is also undef
+//     Enable if DEBUG_SYNC is defined
 // #define DEBUG 1
+// #define DEBUG_SYNC 1
 
-// If you undefined DEBUG above, you can enable/disable debug statements via
-// ESP-IDF or Arduino Board Configuration (IDE/CLI, VS Code extension, etc.).
+// If you undefined DEBUG & DEBUG_SYNC above, you can enable/disable debug
+// statements via ESP-IDF or Arduino Board Configuration (IDE/CLI, VS Code
+// extension, etc.).
 #ifndef DEBUG
-#define DEBUG CORE_DEBUG_LEVEL
-#undef DEBUG_SYNC
+  #ifdef DEBUG_SYNC
+    #define DEBUG 1
+  #else
+    #define DEBUG CORE_DEBUG_LEVEL
+  #endif
 #endif
 
 #ifdef ARDUINO
-#ifdef ARDUINO_ARCH_MBED
-#define SerialDebug (SerialUSB) // debug I/O stream (USB CDC)
-#else                           // ! ARDUINO_ARCH_MBED
-#define SerialDebug (Serial)    // debug I/O stream (UART)
-#endif                          // ! ARDUINO_ARCH_MBED
+  #ifdef ARDUINO_ARCH_MBED
+    #define SerialDebug (SerialUSB) // debug I/O stream (USB CDC)
+  #else                           // ! ARDUINO_ARCH_MBED
+    #define SerialDebug (Serial)    // debug I/O stream (UART)
+  #endif                          // ! ARDUINO_ARCH_MBED
 #endif
 
 // Both Arduino Serial Monitor and GNU Screen tend to respect CR+LF as newline
@@ -72,15 +81,15 @@ struct log {
   static void init() {
 #if DEBUG
     SerialDebug.begin(115200UL);
-#if DEBUG_SYNC
+  #if DEBUG_SYNC
     while (!SerialDebug) {
       delay(10);
     }
-#endif // DEBUG_SYNC
+  #endif // DEBUG_SYNC
 #endif // DEBUG
   }
 };
 
 } // namespace native
 
-#endif // api_native_debug_hpp
+#endif // common_native_debug_hpp

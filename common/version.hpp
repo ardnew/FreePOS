@@ -1,5 +1,5 @@
-#ifndef api_version_hpp
-#define api_version_hpp
+#ifndef common_version_hpp
+#define common_version_hpp
 
 #ifndef VERSION_NAME
 #define VERSION_NAME "FreePOS"
@@ -9,8 +9,8 @@
 #define VERSION_SEMVER "0.0.0"
 #endif
 
-static constexpr auto BLEDeviceName = VERSION_NAME;
-static constexpr auto BLEServerName = "Server";
-static constexpr auto BLEClientName = "Client";
+static constexpr auto DeviceName = VERSION_NAME;
+static constexpr auto ServerName = "Server";
+static constexpr auto ClientName = "Client";
 
-#endif // api_version_hpp
+#endif // common_version_hpp

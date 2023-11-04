@@ -4,13 +4,13 @@
 #include "spec.hpp"
 
 template <typename T, size_t N = 32>
-class PacketBuf: public RingBuf<Packet<T>, N> {
-  using RingBuf<Packet<T>, N>::RingBuf;
+class PacketBuf: public RingBuf<packet::Data<T>, N> {
+  using RingBuf<packet::Data<T>, N>::RingBuf;
   std::mutex _mutx;
 public:
   bool push(const uint8_t *ptr, const size_t size) {
     std::lock_guard<std::mutex> lck(_mutx);
-    return RingBuf<Packet<T>, N>::pushOverwrite(Packet<T>(ptr, size));
+    return RingBuf<packet::Data<T>, N>::pushOverwrite(packet::Data<T>(ptr, size));
   }
 };
 
