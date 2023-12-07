@@ -2,14 +2,35 @@
 #define include_hid_link_hpp
 
 #include "hid/chan.hpp"
+#include "hid/ident.hpp"
 
 namespace link {
 
 class Hub: public arduino::USBHID {
-private:
-
 public:
-  Hub() {}
+  static auto sensors() {
+    return chan::sensors<
+      AccelerometerData
+      // BarometerData,
+      // ColorData,
+      // GestureData,
+      // GyroscopeData,
+      // HumidityData,
+      // KeepAliveData,
+      // MagnetometerData,
+      // MicrophoneData,
+      // ProximityData,
+      // ScaleData,
+      // TemperatureData
+      // ThermometerData
+    >();
+  }
+
+  Hub(USBPhy *phy, const Ident ident):
+    arduino::USBHID(phy, 0, 0, ident.vid, ident.pid, ident.ver) {
+      sensors();
+    }
+  Hub(): Hub(get_usb_phy(), Ident(uuid<SensorData>())) {}
   virtual ~Hub() {}
 
   bool init();
@@ -18,7 +39,7 @@ public:
 
   template <typename T>
   int tx(packet::Data<typename T::Type>&& p) {
-    return chan::Sensor<T>::get().write(std::move(p));
+    return chan::SensorImpl<T>::get().write(std::move(p));
   }
 
   //virtual const uint8_t *configuration_desc(uint8_t index) override;
@@ -32,7 +53,12 @@ public:
   //virtual const uint8_t *string_iinterface_desc() override;
   //virtual uint8_t getProductVersion() override;
 
-  virtual const uint8_t *report_desc() override { return {}; }
+  virtual const uint8_t *report_desc() override {
+    static uint8_t desc[] = {
+    };
+    reportLength = sizeof(desc);
+    return desc;
+  }
 };
 
 }

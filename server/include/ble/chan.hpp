@@ -6,14 +6,16 @@
 namespace chan {
 
 template <typename T>
-class Sensor: public BLETypedCharacteristic<packet::Data<typename T::Type>> {
+class SensorImpl: public BLETypedCharacteristic<packet::Data<typename T::Type>> {
 public:
   using BLETypedCharacteristic<packet::Data<typename T::Type>>::BLETypedCharacteristic;
 
-  // The first call to get() will instantiate a static instance of Sensor<T>.
+  virtual ~SensorImpl() {}
+
+  // The first call to get() will instantiate a static instance of SensorImpl<T>.
   // All subsequent calls will return a reference to the same instance.
-  static Sensor<T>& get() {
-    static Sensor<T> c(
+  static SensorImpl<T>& get() {
+    static SensorImpl<T> c(
       uuid<T>(), BLERead | BLENotify | BLEBroadcast);
     return c;
   }
@@ -24,7 +26,7 @@ public:
 };
 
 // template <typename T, size_t N>
-// using BLETaggedArrayCharacteristic = Sensor<std::array<T, N>>;
+// using BLETaggedArrayCharacteristic = SensorImpl<std::array<T, N>>;
 
 } // namespace chan
 

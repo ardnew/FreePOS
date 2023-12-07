@@ -12,18 +12,18 @@
 class Target: private link::Hub {
 protected:
   Accelerometer _accelerometer;
-  Barometer _barometer;
+  //Barometer _barometer;
   //Color _color;
   //Gesture _gesture;
   //Gyroscope _gyroscope;
-  Humidity _humidity;
-  KeepAlive _keepAlive;
+  //Humidity _humidity;
+  //KeepAlive _keepAlive;
   //Magnetometer _magnetometer;
   //Microphone _microphone;
-  Proximity _proximity;
-  Scale _scale;
-  Temperature _temperature;
-  // Thermometer _thermometer;
+  //Proximity _proximity;
+  //Scale _scale;
+  //Temperature _temperature;
+  //Thermometer _thermometer;
 
 public:
   Target();

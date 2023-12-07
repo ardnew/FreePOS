@@ -45,6 +45,7 @@
 #include "thermometer.hpp"
 
 template <typename T> static constexpr UUID uuid();
+template <> constexpr UUID uuid<SensorData>() { return UUID_SENSORS_SERVICE; }
 template <> constexpr UUID uuid<AccelerometerData>() { return UUID_SENSORS_ACCXYZ_CHAR; }
 template <> constexpr UUID uuid<BarometerData>() { return UUID_SENSORS_BARPSI_CHAR; }
 template <> constexpr UUID uuid<ColorData>() { return UUID_SENSORS_COLORS_CHAR; }

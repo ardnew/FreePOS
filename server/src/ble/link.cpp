@@ -15,19 +15,19 @@ bool link::Hub::init() {
   BLE.setLocalName(DeviceName);
   BLE.setAdvertisedService(_sensors);
 
-  _sensors.addCharacteristic(chan::Sensor<AccelerometerData>::get());
-  _sensors.addCharacteristic(chan::Sensor<BarometerData>::get());
-  _sensors.addCharacteristic(chan::Sensor<ColorData>::get());
-  _sensors.addCharacteristic(chan::Sensor<GestureData>::get());
-  _sensors.addCharacteristic(chan::Sensor<GyroscopeData>::get());
-  _sensors.addCharacteristic(chan::Sensor<HumidityData>::get());
-  _sensors.addCharacteristic(chan::Sensor<KeepAliveData>::get());
-  _sensors.addCharacteristic(chan::Sensor<MagnetometerData>::get());
-  _sensors.addCharacteristic(chan::Sensor<MicrophoneData>::get());
-  _sensors.addCharacteristic(chan::Sensor<ProximityData>::get());
-  _sensors.addCharacteristic(chan::Sensor<ScaleData>::get());
-  _sensors.addCharacteristic(chan::Sensor<TemperatureData>::get());
-  _sensors.addCharacteristic(chan::Sensor<ThermometerData>::get());
+  _sensors.addCharacteristic(chan::SensorImpl<AccelerometerData>::get());
+  _sensors.addCharacteristic(chan::SensorImpl<BarometerData>::get());
+  _sensors.addCharacteristic(chan::SensorImpl<ColorData>::get());
+  _sensors.addCharacteristic(chan::SensorImpl<GestureData>::get());
+  _sensors.addCharacteristic(chan::SensorImpl<GyroscopeData>::get());
+  _sensors.addCharacteristic(chan::SensorImpl<HumidityData>::get());
+  _sensors.addCharacteristic(chan::SensorImpl<KeepAliveData>::get());
+  _sensors.addCharacteristic(chan::SensorImpl<MagnetometerData>::get());
+  _sensors.addCharacteristic(chan::SensorImpl<MicrophoneData>::get());
+  _sensors.addCharacteristic(chan::SensorImpl<ProximityData>::get());
+  _sensors.addCharacteristic(chan::SensorImpl<ScaleData>::get());
+  _sensors.addCharacteristic(chan::SensorImpl<TemperatureData>::get());
+  _sensors.addCharacteristic(chan::SensorImpl<ThermometerData>::get());
 
   BLE.addService(_sensors);
   BLE.advertise();

@@ -20,7 +20,7 @@ public:
 
   template <typename T>
   int tx(packet::Data<typename T::Type>&& p) {
-    return chan::Sensor<T>::get().write(std::move(p));
+    return chan::SensorImpl<T>::get().write(std::move(p));
   }
 };
 
