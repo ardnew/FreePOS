@@ -1,8 +1,16 @@
-#ifndef include_hid_spec_sensor.hpp
-#define include_hid_spec_sensor.hpp
+#ifndef include_hid_spec_sensor
+#define include_hid_spec_sensor
 
+//
 // The following definitions are copied from:
-//   https://github.com/majbthrd/HIDsensor/blob/8ed0a6312c4c9daee7c0431c160af9fbb824d30a/src/stm32f072/HidSensorSpec.h
+//
+//   HID Sensor Usage Tables (Request #HUTRR39)
+//   Section 4.1 "Include File Definitions"
+//
+// This document is published by the USB-IF and is available at:
+//
+//   https://usb.org/sites/default/files/hutrr39b_0.pdf
+//
 
 #define HID_USAGE_PAGE_SENSOR 0x05,0x20
 //sensor category usages
@@ -655,4 +663,4 @@
 #define HID_SENSOR_VALUE_SIZE_16(x) (uint8_t)((x) >> 0), (uint8_t)((x) >> 8)
 #define HID_SENSOR_VALUE_SIZE_32(x) (uint8_t)((x) >> 0), (uint8_t)((x) >> 8), (uint8_t)((x) >> 16), (uint8_t)((x) >> 24)
 
-#endif
+#endif // include_hid_spec_sensor
