@@ -1,0 +1,29 @@
+6c6,7
+<   Modified 13 August 2006, David A. Mellis for Arduino - http://www.arduino.cc/
+---
+>   Modified 13 August 2006, David A. Mellis for Arduino - http://www.arduino.cc/
+>   Modified 7 January 2024, Andrew Shultzabarger (andrew@ardnew.com)
+28c30
+< void randomSeed(unsigned long seed)
+---
+> extern void randomSeed(unsigned long seed)
+31c33
+<     srandom(seed);
+---
+>     srand(seed);
+35c37
+< long random(long howbig)
+---
+> extern long random(long howbig)
+37c39
+<   if (howbig == 0) {
+---
+>   if ( howbig == 0 ) {
+40c42
+<   return random() % howbig;
+---
+>   return rand() % howbig;
+43c45
+< long random(long howsmall, long howbig)
+---
+> extern long random(long howsmall, long howbig)

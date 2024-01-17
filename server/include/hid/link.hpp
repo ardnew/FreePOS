@@ -2,6 +2,7 @@
 #define include_hid_link_hpp
 
 #include "hid/chan.hpp"
+#include "hid/desc.hpp"
 #include "hid/ident.hpp"
 #include "hid/spec/sensor.h"
 
@@ -55,9 +56,69 @@ using Sensors = SensorPool<
   // ThermometerData,
 >;
 
+// template<typename... Ts>
+// struct FlattenReports {
+//     using type = desc::Bytes<uint8_t, desc::Report<Ts>...>;
+// };
+
+// using FlattenedReports = typename FlattenReports<Sensors>::type;
+
 class Hub: public arduino::USBHID, public Sensors {
 protected:
   const Ident _ident;
+
+  using Report = desc::Bytes<
+    uint8_t,
+    HID_USAGE_PAGE_SENSOR,
+    HID_USAGE_SENSOR_TYPE_COLLECTION,
+
+    // // ...
+
+    HID_COLLECTION(Application),
+    HID_END_COLLECTION
+  >;
+
+  using Config = desc::Bytes<
+    uint8_t,                            // Index of wTotalLength
+    CONFIGURATION_DESCRIPTOR_LENGTH,    // bLength
+    CONFIGURATION_DESCRIPTOR,           // bDescriptorType
+    0,                                  // <-- wTotalLength (LSB)
+    0,                                  // <-- wTotalLength (MSB)
+    0x01,                               // bNumInterfaces
+    0x01,                               // bConfigurationValue
+    0x00,                               // iConfiguration
+    C_RESERVED | C_SELF_POWERED,        // bmAttributes
+    C_POWER(100),                       // bMaxPower (mA)
+
+    INTERFACE_DESCRIPTOR_LENGTH,        // bLength
+    INTERFACE_DESCRIPTOR,               // bDescriptorType
+    0x00,                               // bInterfaceNumber
+    0x00,                               // bAlternateSetting
+    0x01,                               // bNumEndpoints
+    HID_CLASS,                          // bInterfaceClass
+    HID_SUBCLASS_NONE,                  // bInterfaceSubClass
+    HID_PROTOCOL_NONE,                  // bInterfaceProtocol
+    0x00,                               // iInterface
+
+    HID_DESCRIPTOR_LENGTH,              // bLength
+    HID_DESCRIPTOR,                     // bDescriptorType
+    LSB(HID_VERSION_1_11),              // bcdHID (LSB)
+    MSB(HID_VERSION_1_11),              // bcdHID (MSB)
+    0x00,                               // bCountryCode
+    0x01,                               // bNumDescriptors
+    REPORT_DESCRIPTOR,                  // bDescriptorType
+    0,                                  // <-- wDescriptorLength (LSB)
+    0,                                  // <-- wDescriptorLength (MSB)
+
+    ENDPOINT_DESCRIPTOR_LENGTH,         // bLength
+    ENDPOINT_DESCRIPTOR,                // bDescriptorType
+    0x80 | 1,                           // bEndpointAddress
+    E_INTERRUPT,                        // bmAttributes
+    LSB(MAX_HID_REPORT_SIZE),           // wMaxPacketSize (LSB)
+    MSB(MAX_HID_REPORT_SIZE),           // wMaxPacketSize (MSB)
+    1                                   // bInterval (milliseconds)
+  >::with<Report::size>::at<25, 26>::count::at<2, 3>;
+
 
 public:
 
@@ -78,6 +139,16 @@ public:
       return -rp.length; // return -1 × length on error
     }
     return rp.length;
+  }
+
+  const uint8_t *configuration_desc(uint8_t index) {
+    if (index != 0) { return nullptr; }
+    return Config::data;
+  }
+
+  const uint8_t *report_desc() {
+    reportLength = Report::size;
+    return Report::data;
   }
 
   //virtual void callback_reset() {} override;
@@ -110,102 +181,7 @@ public:
   //   };
   //   return desc;
   // }
-
-  const uint8_t *configuration_desc(uint8_t index) {
-    if (index != 0) {
-      return nullptr;
-    }
-
-    (void)report_desc();
-
-    uint8_t desc[] = {
-      CONFIGURATION_DESCRIPTOR_LENGTH,    // bLength
-      CONFIGURATION_DESCRIPTOR,           // bDescriptorType
-      LSB(descriptor::config_size),       // wTotalLength (LSB)
-      MSB(descriptor::config_size),       // wTotalLength (MSB)
-      0x01,                               // bNumInterfaces
-      0x01,                               // bConfigurationValue
-      0x00,                               // iConfiguration
-      C_RESERVED | C_SELF_POWERED,        // bmAttributes
-      C_POWER(100),                       // bMaxPower (mA)
-
-      INTERFACE_DESCRIPTOR_LENGTH,        // bLength
-      INTERFACE_DESCRIPTOR,               // bDescriptorType
-      0x00,                               // bInterfaceNumber
-      0x00,                               // bAlternateSetting
-      0x01,                               // bNumEndpoints
-      HID_CLASS,                          // bInterfaceClass
-      HID_SUBCLASS_NONE,                  // bInterfaceSubClass
-      HID_PROTOCOL_NONE,                  // bInterfaceProtocol
-      0x00,                               // iInterface
-
-      HID_DESCRIPTOR_LENGTH,              // bLength
-      HID_DESCRIPTOR,                     // bDescriptorType
-      LSB(HID_VERSION_1_11),              // bcdHID (LSB)
-      MSB(HID_VERSION_1_11),              // bcdHID (MSB)
-      0x00,                               // bCountryCode
-      0x01,                               // bNumDescriptors
-      REPORT_DESCRIPTOR,                  // bDescriptorType
-      (uint8_t)(LSB(reportLength)),       // wDescriptorLength (LSB)
-      (uint8_t)(MSB(reportLength)),       // wDescriptorLength (MSB)
-
-      ENDPOINT_DESCRIPTOR_LENGTH,         // bLength
-      ENDPOINT_DESCRIPTOR,                // bDescriptorType
-      0x80 | 1,                                                      // bEndpointAddress
-      E_INTERRUPT,                        // bmAttributes
-      LSB(MAX_HID_REPORT_SIZE),           // wMaxPacketSize (LSB)
-      MSB(MAX_HID_REPORT_SIZE),           // wMaxPacketSize (MSB)
-      1,                                  // bInterval (milliseconds)
-    };
-    MBED_ASSERT(sizeof(desc) == descriptor::config_size);
-    memcpy(_desc.config, desc, descriptor::config_size);
-    return _desc.config;
-  }
-
-  const uint8_t *report_desc() {
-    uint8_t desc[] = {
-      HID_USAGE_PAGE_SENSOR,
-      HID_USAGE_SENSOR_TYPE_COLLECTION,
-      HID_COLLECTION(Application),
-      HID_END_COLLECTION,
-    };
-    reportLength = descriptor::report_size;
-    MBED_ASSERT(sizeof(desc) == descriptor::report_size);
-    memcpy(_desc.report, desc, descriptor::report_size);
-    return _desc.report;
-  }
-
-private:
-  class descriptor {
-  public:
-    static constexpr size_t config_size =
-      1 * CONFIGURATION_DESCRIPTOR_LENGTH +
-      1 * INTERFACE_DESCRIPTOR_LENGTH +
-      1 * HID_DESCRIPTOR_LENGTH +
-      1 * ENDPOINT_DESCRIPTOR_LENGTH;
-    static constexpr size_t report_size = 7UL;
-    uint8_t config[config_size];
-    uint8_t report[report_size];
-  } _desc;
 };
-
-// Return the index of the <skip+1>'th descriptor of the specified type, or
-// return -1 if not found.
-//
-// For example, to get the position of the second endpoint in the
-// configuration descriptor, call:
-//   index(config(0), _defaultConfigLength, ENDPOINT_DESCRIPTOR_TYPE, 1);
-// static int index(uint8_t *desc, size_t size, uint8_t type, size_t skip = 0) {
-//   uint8_t *p = desc;
-//   while (p < desc + size) {
-//     if (p[1] == type && skip-- == 0) {
-//       return p - desc;
-//     }
-//     p += p[0];
-//   }
-//   return -1;
-// }
-
 
 }
 

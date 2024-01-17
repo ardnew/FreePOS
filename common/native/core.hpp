@@ -12,8 +12,6 @@
     #include <freertos/FreeRTOS.h>
     #include <freertos/task.h>
     #include <sdkconfig.h>
-    #include <stdio.h>
-    #include <stdlib.h>
   #else // ! ESP_PLATFORM
     #include <mbed.h>
     #if defined(FREEPOS_LINK_BLE)
@@ -30,13 +28,13 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <cstdint>
 #include <iomanip>
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
-#include <stdio.h> // snprintf, sscanf
-#include <stdint.h>
 #include <string>
 #include <tuple>
 #include <vector>

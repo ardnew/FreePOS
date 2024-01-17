@@ -1,7 +1,7 @@
 #ifndef include_hid_chan_hpp
 #define include_hid_chan_hpp
 
-#include "spec.hpp"
+#include "hid/desc.hpp"
 
 namespace chan {
 
@@ -91,10 +91,11 @@ public:
   // Given the current use-case of this project (kitchen scale), this seems to
   // be an acceptable tradeoff. :p
   //
-  // It is not necessary to subclass SensorImpl for each sensor type added or
-  // removed. You only need to provide a template specialization of desc for the
-  // new type. See the other specializations in chan.cpp for examples.
-  virtual const uint8_t *desc(uint16_t *size) const;
+  // It is not necessary to subclass SensorImpl for each sensor type T added or
+  // removed; you only need to implement a class template specialization of
+  // desc::Report<T> for the new type.
+  // See the other specializations in "hid/desc.hpp" for examples.
+  static constexpr auto report_desc() { return desc::Report<T>::array; }
 };
 
 } // namespace chan
